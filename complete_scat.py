@@ -11,34 +11,28 @@ t = np.arange(0, (2 * depth_max) / c, 1/fs)
 num_channels = 128    
 x_array = np.linspace(-0.015, 0.015, num_channels) 
 
-# --- 2. PHANTOM GENERATION (Speckle + Point Targets + Large Targets) ---
-num_speckle = 2000    
-x_speckle = np.random.uniform(-0.02, 0.02, num_speckle)
-z_speckle = np.random.uniform(0.01, depth_max, num_speckle)
-amp_speckle = np.random.normal(0, 0.45, num_speckle) 
+# --- 2. PHANTOM GENERATION (High Density) ---
+num_speckle = 40000    # Aumentiamo molto per un fondo continuo
+x_s = np.random.uniform(-0.02, 0.02, num_speckle)
+z_s = np.random.uniform(0.01, depth_max, num_speckle)
+amps = np.random.normal(0, 0.3, num_speckle)
 
-# A. Point targets (Punti singoli brillanti)
-x_points = [0.0, -0.005, 0.005]
-z_points = [0.03, 0.04, 0.04]   
-amp_points = [6.0, 6.0, 6.0]  
+# CREIAMO LA CISTI: Eliminiamo i punti dentro un cerchio
+# Centro: (0, 0.03), Raggio: 5mm
+cisti_mask = np.sqrt((x_s - 0.0)**2 + (z_s - 0.03)**2) > 0.005
+x_s = x_s[cisti_mask]
+z_s = z_s[cisti_mask]
+amps = amps[cisti_mask]
 
-# B. Large Target 1: Massa circolare (es. a sinistra)
-num_pts_large = 100
-theta = np.random.uniform(0, 2*np.pi, num_pts_large)
-radius = np.random.uniform(0, 0.003, num_pts_large) # Raggio 3mm
-x_large1 = -0.01 + radius * np.cos(theta)
-z_large1 = 0.02 + radius * np.sin(theta)
-amp_large1 = [3.0] * num_pts_large # Meno brillanti dei punti singoli per realismo
+cisti_mask2 = np.sqrt((x_s - (-0.01))**2 + (z_s - 0.05)**2) > 0.004
+x_s = x_s[cisti_mask2]
+z_s = z_s[cisti_mask2]
+amps = amps[cisti_mask2]
 
-# C. Large Target 2: Struttura piatta/ellittica (es. a destra)
-x_large2 = 0.01 + (radius * 2) * np.cos(theta) # Più larga
-z_large2 = 0.02 + (radius * 0.5) * np.sin(theta) # Più sottile
-amp_large2 = [3.0] * num_pts_large
-
-# Combine everything
-x_s = np.concatenate([x_speckle, x_points, x_large1, x_large2])
-z_s = np.concatenate([z_speckle, z_points, z_large1, z_large2])
-amps = np.concatenate([amp_speckle, amp_points, amp_large1, amp_large2])
+# Aggiungiamo solo 2-3 target molto brillanti per riferimento
+#x_s = np.append(x_s, [0.008, -0.008])
+#z_s = np.append(z_s, [0.045, 0.045])
+#amps = np.append(amps, [15.0, 15.0])
 
 # --- 3. IMPULSE e(t) ---
 f0 = 5e6
